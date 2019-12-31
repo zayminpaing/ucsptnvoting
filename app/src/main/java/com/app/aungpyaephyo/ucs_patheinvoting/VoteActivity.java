@@ -1,8 +1,11 @@
 package com.app.aungpyaephyo.ucs_patheinvoting;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
@@ -193,34 +196,44 @@ public class VoteActivity extends AppCompatActivity implements AdapterView.OnIte
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
                                             //firebase
-                                            final ProgressDialog d = ProgressDialog.show(VoteActivity.this, "",
-                                                    "Loading. Please wait...", true);
-                                            FirebaseDatabase.getInstance().getReference().child(FirebaseAuth.getInstance().getCurrentUser().getEmail()).setValue(r)
-                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                                @Override
-                                                public void onComplete(@NonNull Task<Void> task) {
-                                                    if(task.isSuccessful()){
-                                                        d.dismiss();
-                                                        Toast.makeText(VoteActivity.this, "Voting Successful", Toast.LENGTH_SHORT).show();
-                                                        FirebaseAuth.getInstance().signOut();
-                                                        finish();
-                                                        startActivity(new Intent(VoteActivity.this, MainActivity.class));
-                                                    }
-                                                    else{
-                                                        d.dismiss();
-                                                        Toast.makeText(VoteActivity.this, "Voting Error\nPlease try again", Toast.LENGTH_LONG).show();
-                                                        finish();
-                                                        startActivity(new Intent(VoteActivity.this, VoteActivity.class));
-                                                    }
-                                                }
-                                            });
+                                            ConnectivityManager connectivityManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+                                            if(connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
+                                                    connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
+                                                final ProgressDialog d = ProgressDialog.show(VoteActivity.this, "",
+                                                        "Loading. Please wait...", true);
+                                                FirebaseDatabase.getInstance().getReference().child(FirebaseAuth.getInstance().getCurrentUser().getEmail().replace("@gmail.com","")).setValue(r)
+                                                        .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                            @Override
+                                                            public void onComplete(@NonNull Task<Void> task) {
+                                                                if(task.isSuccessful()){
+                                                                    FirebaseAuth.getInstance().getCurrentUser().delete().addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                                        @Override
+                                                                        public void onComplete(@NonNull Task<Void> task) {
+                                                                            d.dismiss();
+                                                                            Toast.makeText(VoteActivity.this, "Voting Successful", Toast.LENGTH_SHORT).show();
+                                                                            finish();
+                                                                            startActivity(new Intent(VoteActivity.this, MainActivity.class));
+                                                                        }
+                                                                    });
+                                                                }
+                                                                else{
+                                                                    d.dismiss();
+                                                                    Toast.makeText(VoteActivity.this, "Voting Error\nPlease try again", Toast.LENGTH_LONG).show();
+                                                                    finish();
+                                                                    startActivity(new Intent(VoteActivity.this, VoteActivity.class));
+                                                                }
+                                                            }
+                                                        });
+                                            }
+                                            else
+                                                Toast.makeText(VoteActivity.this,"Please turn on the Internet",Toast.LENGTH_SHORT).show();
                                         }
                                     })
-                                    .setNegativeButton("Edit", new DialogInterface.OnClickListener() {
+                                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
                                             finish();
-                                            startActivity(new Intent(VoteActivity.this, VoteActivity.class));
+                                            startActivity(new Intent(VoteActivity.this, MainActivity.class));
                                         }
                                     }).show();
                         } else {
